@@ -30,8 +30,8 @@ def format_alert(feature: dict) -> str:
 Event: {props.get('event', 'Unknown')}
 Area: {props.get('areaDesc', 'Unknown')}
 Severity: {props.get('severity', 'Unknown')}
-Description: {props.get('description', 'No description available')}
-Instructions: {props.get('instruction', 'No specific instructions provided')}
+Status: {props.get('status', 'Unknown')}
+Headline: {props.get('headline', 'No headline')}
 """
 
 @mcp.tool()
@@ -41,14 +41,14 @@ async def get_alerts(state: str) -> str:
     Args:
         state: Two-letter US state code (e.g. CA, NY)
     """
-    url = f"{NWS_API_BASE}/alerts/active/area/{state}"
+    url = f"{NWS_API_BASE}/alerts?area={state}"
     data = await make_nws_request(url)
 
     if not data or "features" not in data:
-        return "Unable to fetch alerts or no alerts found."
+        return "Failed to retrieve alerts data"
 
     if not data["features"]:
-        return "No active alerts for this state."
+        return f"No active alerts for {state}"
 
     alerts = [format_alert(feature) for feature in data["features"]]
     return "\n---\n".join(alerts)
@@ -66,19 +66,19 @@ async def get_forecast(latitude: float, longitude: float) -> str:
     points_data = await make_nws_request(points_url)
 
     if not points_data:
-        return "Unable to fetch forecast data for this location."
+        return f"Failed to retrieve grid point data for coordinates: {latitude}, {longitude}. This location may not be supported by the NWS API (only US locations are supported)."
 
     # Get the forecast URL from the points response
     forecast_url = points_data["properties"]["forecast"]
     forecast_data = await make_nws_request(forecast_url)
 
     if not forecast_data:
-        return "Unable to fetch detailed forecast."
+        return "Failed to retrieve forecast data"
 
     # Format the periods into a readable forecast
     periods = forecast_data["properties"]["periods"]
     forecasts = []
-    for period in periods[:5]:  # Only show next 5 periods
+    for period in periods:  # Show all periods
         forecast = f"""
 {period['name']}:
 Temperature: {period['temperature']}°{period['temperatureUnit']}

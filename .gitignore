@@ -3,6 +3,9 @@ build/
 # Node-generated files
 node_modules/
 
+.env.*
+.env
+
 # Python-generated files
 __pycache__/
 *.py[oc]
