@@ -10,7 +10,7 @@ import readline from "readline/promises";
 
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config(); // load environment variables from .env
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 if (!ANTHROPIC_API_KEY) {
@@ -23,6 +23,7 @@ class MCPClient {
   private transport: StdioClientTransport | null = null;
 
   constructor() {
+    // Initialize Anthropic client and MCP client
     this.anthropic = new Anthropic({
       apiKey: ANTHROPIC_API_KEY,
     });
@@ -30,7 +31,13 @@ class MCPClient {
   }
 
   async connectToServer(serverScriptPath: string) {
+    /**
+     * Connect to an MCP server
+     * 
+     * @param serverScriptPath - Path to the server script (.py or .js)
+     */
     try {
+      // Determine script type and appropriate command
       const isJs = serverScriptPath.endsWith(".js");
       const isPy = serverScriptPath.endsWith(".py");
       if (!isJs && !isPy) {
@@ -41,11 +48,15 @@ class MCPClient {
           ? "python"
           : "python3"
         : process.execPath;
+
+      // Initialize transport and connect to server
       this.transport = new StdioClientTransport({
         command,
         args: [serverScriptPath],
       });
       this.mcp.connect(this.transport);
+
+      // List available tools
       const toolsResult = await this.mcp.listTools();
       const tools = toolsResult.tools.map((tool) => {
         return {
@@ -65,6 +76,12 @@ class MCPClient {
   }
 
   async processQuery(query: string) {
+    /**
+     * Process a query using Claude and available tools
+     * 
+     * @param query - The user's input query
+     * @returns Processed response as a string
+     */
     const messages: MessageParam[] = [
       {
         role: "user",
@@ -72,6 +89,7 @@ class MCPClient {
       },
     ];
 
+    // Get available tools
     const toolsResult = await this.mcp.listTools();
     const tools: Tool[] = toolsResult.tools.map((tool) => {
       return {
@@ -80,6 +98,8 @@ class MCPClient {
         input_schema: tool.inputSchema,
       };
     });
+
+    // Initial Claude API call
     const response = await this.anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
       max_tokens: 1000,
@@ -87,6 +107,7 @@ class MCPClient {
       tools,
     });
 
+    // Process response and handle tool calls
     const finalText = [];
     const toolResults = [];
 
@@ -94,6 +115,7 @@ class MCPClient {
       if (content.type === "text") {
         finalText.push(content.text);
       } else if (content.type === "tool_use") {
+        // Execute tool call
         const toolName = content.name;
         const toolArgs = content.input as { [x: string]: unknown } | undefined;
 
@@ -106,11 +128,13 @@ class MCPClient {
           `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`
         );
 
+        // Continue conversation with tool results
         messages.push({
           role: "user",
           content: result.content as string,
         });
 
+        // Get next response from Claude
         const response = await this.anthropic.messages.create({
           model: "claude-3-5-sonnet-20241022",
           max_tokens: 1000,
@@ -127,6 +151,9 @@ class MCPClient {
   }
 
   async chatLoop() {
+    /**
+     * Run an interactive chat loop
+     */
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -146,9 +173,13 @@ class MCPClient {
   }
 
   async cleanup() {
+    /**
+     * Clean up resources
+     */
     await this.mcp.close();
   }
 }
+
 async function main() {
   if (process.argv.length < 3) {
     console.log("Usage: node index.ts <path_to_server_script>");
