@@ -90,7 +90,6 @@ class MCPClient {
       },
     ];
 
-      };
 
     // Initial Claude API call
     const response = await this.anthropic.messages.create({
