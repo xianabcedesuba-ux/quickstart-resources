@@ -159,16 +159,20 @@ class MCPClient {
       output: process.stdout,
     });
 
-    console.log("\nMCP Client Started!");
-    console.log("Type your queries or 'quit' to exit.");
+    try {
+      console.log("\nMCP Client Started!");
+      console.log("Type your queries or 'quit' to exit.");
 
-    while (true) {
-      const message = await rl.question("\nQuery: ");
-      if (message === "quit") {
-        break;
+      while (true) {
+        const message = await rl.question("\nQuery: ");
+        if (message.toLowerCase() === "quit") {
+          break;
+        }
+        const response = await this.processQuery(message);
+        console.log("\n" + response);
       }
-      const response = await this.processQuery(message);
-      console.log("\n" + response);
+    } finally {
+      rl.close();
     }
   }
 
@@ -182,7 +186,7 @@ class MCPClient {
 
 async function main() {
   if (process.argv.length < 3) {
-    console.log("Usage: node index.ts <path_to_server_script>");
+    console.log("Usage: node build/index.js <path_to_server_script>");
     return;
   }
   const mcpClient = new MCPClient();
