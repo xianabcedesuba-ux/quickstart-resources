@@ -21,6 +21,7 @@ class MCPClient {
   private mcp: Client;
   private anthropic: Anthropic;
   private transport: StdioClientTransport | null = null;
+  private tools: Tool[] = [];
 
   constructor() {
     // Initialize Anthropic client and MCP client
@@ -58,7 +59,7 @@ class MCPClient {
 
       // List available tools
       const toolsResult = await this.mcp.listTools();
-      const tools = toolsResult.tools.map((tool) => {
+      this.tools = toolsResult.tools.map((tool) => {
         return {
           name: tool.name,
           description: tool.description,
@@ -67,7 +68,7 @@ class MCPClient {
       });
       console.log(
         "Connected to server with tools:",
-        tools.map(({ name }) => name)
+        this.tools.map(({ name }) => name)
       );
     } catch (e) {
       console.log("Failed to connect to MCP server: ", e);
@@ -89,22 +90,14 @@ class MCPClient {
       },
     ];
 
-    // Get available tools
-    const toolsResult = await this.mcp.listTools();
-    const tools: Tool[] = toolsResult.tools.map((tool) => {
-      return {
-        name: tool.name,
-        description: tool.description,
-        input_schema: tool.inputSchema,
       };
-    });
 
     // Initial Claude API call
     const response = await this.anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
       max_tokens: 1000,
       messages,
-      tools,
+      tools: this.tools,
     });
 
     // Process response and handle tool calls
