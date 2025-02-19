@@ -34,7 +34,7 @@ class MCPClient {
   async connectToServer(serverScriptPath: string) {
     /**
      * Connect to an MCP server
-     * 
+     *
      * @param serverScriptPath - Path to the server script (.py or .js)
      */
     try {
@@ -68,7 +68,7 @@ class MCPClient {
       });
       console.log(
         "Connected to server with tools:",
-        this.tools.map(({ name }) => name)
+        this.tools.map(({ name }) => name),
       );
     } catch (e) {
       console.log("Failed to connect to MCP server: ", e);
@@ -79,7 +79,7 @@ class MCPClient {
   async processQuery(query: string) {
     /**
      * Process a query using Claude and available tools
-     * 
+     *
      * @param query - The user's input query
      * @returns Processed response as a string
      */
@@ -89,7 +89,6 @@ class MCPClient {
         content: query,
       },
     ];
-
 
     // Initial Claude API call
     const response = await this.anthropic.messages.create({
@@ -117,7 +116,7 @@ class MCPClient {
         });
         toolResults.push(result);
         finalText.push(
-          `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`
+          `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`,
         );
 
         // Continue conversation with tool results
@@ -134,7 +133,7 @@ class MCPClient {
         });
 
         finalText.push(
-          response.content[0].type === "text" ? response.content[0].text : ""
+          response.content[0].type === "text" ? response.content[0].text : "",
         );
       }
     }
