@@ -92,7 +92,7 @@ class MCPClient {
 
     // Initial Claude API call
     const response = await this.anthropic.messages.create({
-      model: "claude-3-7-sonnet-latest",
+      model: "claude-sonnet-4-0",
       max_tokens: 1000,
       messages,
       tools: this.tools,
@@ -127,7 +127,7 @@ class MCPClient {
 
         // Get next response from Claude
         const response = await this.anthropic.messages.create({
-          model: "claude-3-7-sonnet-latest",
+          model: "claude-sonnet-4-0",
           max_tokens: 1000,
           messages,
         });
