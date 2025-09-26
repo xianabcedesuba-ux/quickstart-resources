@@ -100,7 +100,6 @@ class MCPClient {
 
     // Process response and handle tool calls
     const finalText = [];
-    const toolResults = [];
 
     for (const content of response.content) {
       if (content.type === "text") {
@@ -114,7 +113,6 @@ class MCPClient {
           name: toolName,
           arguments: toolArgs,
         });
-        toolResults.push(result);
         finalText.push(
           `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`,
         );
