@@ -1,11 +1,12 @@
 use anyhow::Result;
 use rmcp::{
+    ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
     model::*,
-    schemars, tool, tool_handler, tool_router, ServerHandler, ServiceExt,
+    schemars, tool, tool_handler, tool_router,
 };
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 const NWS_API_BASE: &str = "https://api.weather.gov";
 const USER_AGENT: &str = "weather-app/1.0";
@@ -165,20 +166,14 @@ impl Weather {
         }): Parameters<MCPForecastRequest>,
     ) -> String {
         let points_url = format!("{NWS_API_BASE}/points/{latitude},{longitude}");
-        let points_data = match make_nws_request::<PointsResponse>(&points_url).await {
-            Ok(data) => data,
-            Err(_) => {
-                return "Unable to fetch forecast data for this location.".to_string();
-            }
+        let Ok(points_data) = make_nws_request::<PointsResponse>(&points_url).await else {
+            return "Unable to fetch forecast data for this location.".to_string();
         };
 
         let forecast_url = points_data.properties.forecast;
 
-        let forecast_data = match make_nws_request::<ForecastResponse>(&forecast_url).await {
-            Ok(data) => data,
-            Err(_) => {
-                return "Unable to fetch forecast data for this location.".to_string();
-            }
+        let Ok(forecast_data) = make_nws_request::<ForecastResponse>(&forecast_url).await else {
+            return "Unable to fetch forecast data for this location.".to_string();
         };
 
         let periods = &forecast_data.properties.periods;
