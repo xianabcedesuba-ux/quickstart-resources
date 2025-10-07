@@ -27,17 +27,27 @@ jobs:
     steps:
       - name: Check team membership
         run: |
-          # Check if user is member of steering-committee team
+          # Check if user is member of steering-committee team or any of its subteams
           TEAM_SLUG="steering-committee"
-          RESPONSE=$(gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/memberships/${{ github.actor }}" 2>&1)
+          ACTOR="${{ github.actor }}"
 
-          if echo "$RESPONSE" | grep -q '"state": "active"'; then
-            echo "✓ User is a member of $TEAM_SLUG team"
+          # Check direct membership in steering-committee
+          if gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/memberships/${ACTOR}" 2>/dev/null | grep -q '"state": "active"'; then
+            echo "✓ User is a direct member of $TEAM_SLUG team"
             exit 0
-          else
-            echo "✗ User is not a member of $TEAM_SLUG team or its subteams"
-            exit 1
           fi
+
+          # Check membership in subteams
+          SUBTEAMS=$(gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/teams" --paginate -q '.[].slug' 2>/dev/null)
+          for subteam in $SUBTEAMS; do
+            if gh api "orgs/modelcontextprotocol/teams/${subteam}/memberships/${ACTOR}" 2>/dev/null | grep -q '"state": "active"'; then
+              echo "✓ User is a member of $subteam subteam"
+              exit 0
+            fi
+          done
+
+          echo "✗ User is not a member of $TEAM_SLUG team or any of its subteams"
+          exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
