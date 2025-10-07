@@ -25,29 +25,25 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
-      - name: Check team membership
+      - name: Check repository permissions
         run: |
-          # Check if user is member of steering-committee team or any of its subteams
-          TEAM_SLUG="steering-committee"
-          ACTOR="${{ github.actor }}"
+          # Check if user has at least triage rights on the repository
+          PERMISSION=$(gh api "repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" -q '.permission' 2>/dev/null)
 
-          # Check direct membership in steering-committee
-          if gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/memberships/${ACTOR}" 2>/dev/null | grep -q '"state": "active"'; then
-            echo "✓ User is a direct member of $TEAM_SLUG team"
-            exit 0
-          fi
-
-          # Check membership in subteams
-          SUBTEAMS=$(gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/teams" --paginate -q '.[].slug' 2>/dev/null)
-          for subteam in $SUBTEAMS; do
-            if gh api "orgs/modelcontextprotocol/teams/${subteam}/memberships/${ACTOR}" 2>/dev/null | grep -q '"state": "active"'; then
-              echo "✓ User is a member of $subteam subteam"
+          case "$PERMISSION" in
+            admin|maintain|push|triage)
+              echo "✓ User has $PERMISSION rights on the repository"
               exit 0
-            fi
-          done
-
-          echo "✗ User is not a member of $TEAM_SLUG team or any of its subteams"
-          exit 1
+              ;;
+            pull)
+              echo "✗ User only has pull (read-only) rights"
+              exit 1
+              ;;
+            *)
+              echo "✗ User does not have sufficient permissions"
+              exit 1
+              ;;
+          esac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
