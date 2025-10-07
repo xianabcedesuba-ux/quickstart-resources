@@ -25,6 +25,22 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      - name: Check team membership
+        run: |
+          # Check if user is member of steering-committee team
+          TEAM_SLUG="steering-committee"
+          RESPONSE=$(gh api "orgs/modelcontextprotocol/teams/${TEAM_SLUG}/memberships/${{ github.actor }}" 2>&1)
+
+          if echo "$RESPONSE" | grep -q '"state": "active"'; then
+            echo "✓ User is a member of $TEAM_SLUG team"
+            exit 0
+          else
+            echo "✗ User is not a member of $TEAM_SLUG team or its subteams"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
